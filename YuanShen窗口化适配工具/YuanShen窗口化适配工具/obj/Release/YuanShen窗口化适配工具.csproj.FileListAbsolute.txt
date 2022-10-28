@@ -1,0 +1,11 @@
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\bin\Release\YuanShen窗口化适配工具.exe.config
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\bin\Release\YuanShen窗口化适配工具.exe
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\bin\Release\YuanShen窗口化适配工具.pdb
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Release\YuanShen窗口化适配工具.csproj.AssemblyReference.cache
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Release\YuanShen窗口化适配工具.csproj.SuggestedBindingRedirects.cache
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Release\YuanShen_Window_Adapter.Properties.Resources.resources
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Release\YuanShen_Window_Adapter.Watcher.WatcherForm.resources
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Release\YuanShen窗口化适配工具.csproj.GenerateResource.cache
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Release\YuanShen窗口化适配工具.csproj.CoreCompileInputs.cache
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Release\YuanShen窗口化适配工具.exe
+D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Release\YuanShen窗口化适配工具.pdb
