@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -256,7 +257,15 @@ namespace YuanShen_Window_Adapter
                 {
                     int CallBackFunc(int nCode, int wParam, IntPtr lParam)
                     {
-                        KeyBoardHookStruct keyBoardHookStruct = (KeyBoardHookStruct)Marshal.PtrToStructure(lParam, typeof(KeyBoardHookStruct));
+                        KeyBoardHookStruct keyBoardHookStruct = new KeyBoardHookStruct();
+                        try
+                        {
+                            keyBoardHookStruct = (KeyBoardHookStruct)Marshal.PtrToStructure(lParam, typeof(KeyBoardHookStruct));
+                        }
+                        catch (Exception ex)
+                        {
+                            ExceptionList.Add($"{ex.GetType().Name} - {ex.Message}");
+                        }
                         if (wParam == WM_KEYUP)
                         {
                             if (runblocker)
@@ -344,6 +353,15 @@ namespace YuanShen_Window_Adapter
                     waiting.Start();
                 }
                 watcher.ShowDialog();
+                if (ExceptionList.Count != 0) // 检测是否存在未影响程序运行的异常并按需显示提示信息
+                {
+                    string message = "程序运行过程中发生了一个或多个异常，但未影响程序正常运行。";
+                    foreach (string msg in ExceptionList)
+                    {
+                        message += $"{Environment.NewLine}低影响度异常：{msg}";
+                    }
+                    Exception_throw(new AggregateException(message));
+                }
             } // 执行窗口化宽屏模式
 
             else
@@ -670,6 +688,11 @@ namespace YuanShen_Window_Adapter
         {
             Exception_throw((Exception)e.ExceptionObject);
         }
+
+        /// <summary>
+        /// 用于保存未导致应用程序运行错误的异常信息
+        /// </summary>
+        internal static List<string> ExceptionList = new List<string> { };
 
         /// <summary>
         /// 封装异常处理程序

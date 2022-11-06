@@ -9,3 +9,14 @@ D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工�
 D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen窗口化适配工具.exe
 D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen窗口化适配工具.pdb
 D:\临时测试项目\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen_Window_Adapter.Watcher.WatcherForm.resources
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\bin\Debug\YuanShen窗口化适配工具.exe.config
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\bin\Debug\YuanShen窗口化适配工具.exe
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\bin\Debug\YuanShen窗口化适配工具.pdb
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen窗口化适配工具.csproj.AssemblyReference.cache
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen窗口化适配工具.csproj.SuggestedBindingRedirects.cache
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen_Window_Adapter.Properties.Resources.resources
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen_Window_Adapter.Watcher.WatcherForm.resources
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen窗口化适配工具.csproj.GenerateResource.cache
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen窗口化适配工具.csproj.CoreCompileInputs.cache
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen窗口化适配工具.exe
+C:\Users\feilingshu\Desktop\YuanShen窗口化适配工具\YuanShen窗口化适配工具\obj\Debug\YuanShen窗口化适配工具.pdb
