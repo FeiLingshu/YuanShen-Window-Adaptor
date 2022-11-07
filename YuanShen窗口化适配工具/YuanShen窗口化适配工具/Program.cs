@@ -93,6 +93,39 @@ namespace YuanShen_Window_Adapter
                 startHandle = IntPtr.Zero;
                 break;
             } while (hWnd == IntPtr.Zero);
+            if (hWnd == IntPtr.Zero)
+            {
+                do
+                {
+                    IntPtr fwe = FindWindowEx(IntPtr.Zero, startHandle, "UnityWndClass", "原神 · 宽屏适配模块相关进程已挂载(F12=启用/禁用位置锁定)");
+                    if (fwe == IntPtr.Zero)
+                    {
+                        break;
+                    }
+                    GetWindowThreadProcessId(fwe, out int pid);
+                    try
+                    {
+                        if (Process.GetProcessById(pid).ProcessName != "YuanShen")
+                        {
+                            startHandle = fwe;
+                            continue;
+                        };
+                    }
+                    catch
+                    {
+                        startHandle = fwe;
+                        continue;
+                    }
+                    hWnd = fwe;
+                    process = Process.GetProcessById(pid);
+                    startHandle = IntPtr.Zero;
+                    break;
+                } while (hWnd == IntPtr.Zero);
+                if (hWnd != IntPtr.Zero)
+                {
+                    SendMessage(hWnd, WM_SETTEXT, IntPtr.Zero, "原神");
+                }
+            }
             if (hWnd == IntPtr.Zero) return;
 
             // 获取窗口win32信息
@@ -253,33 +286,37 @@ namespace YuanShen_Window_Adapter
                     Opacity = 0
                 };
                 bool runblocker = true;
-                watcher.Shown += (object es, EventArgs ee) =>
+                Func<int, int, IntPtr, int> Win32CallBack = // 在首层方法体中内联声明Win32委托，以便执行内存固定
+                (int nCode, int wParam, IntPtr lParam) =>
                 {
-                    int CallBackFunc(int nCode, int wParam, IntPtr lParam)
+                    KeyBoardHookStruct keyBoardHookStruct = new KeyBoardHookStruct();
+                    try
                     {
-                        KeyBoardHookStruct keyBoardHookStruct = new KeyBoardHookStruct();
-                        try
+                        keyBoardHookStruct = (KeyBoardHookStruct)Marshal.PtrToStructure(lParam, typeof(KeyBoardHookStruct));
+                    }
+                    finally
+                    {
+                        if (keyBoardHookStruct == null)
                         {
-                            keyBoardHookStruct = (KeyBoardHookStruct)Marshal.PtrToStructure(lParam, typeof(KeyBoardHookStruct));
+                            ExceptionList.Add($"[{DateTime.Now:yyyy/MM/dd HH:mm:ss}] - LocalLowHook捕获发生异常。");
                         }
-                        catch (Exception ex)
+                    }
+                    if (wParam == WM_KEYUP)
+                    {
+                        if (runblocker)
                         {
-                            ExceptionList.Add($"{ex.GetType().Name} - {ex.Message}");
-                        }
-                        if (wParam == WM_KEYUP)
-                        {
-                            if (runblocker)
+                            if (keyBoardHookStruct.vkCode == VK_F12 && GetForegroundWindow() == hWnd)
                             {
-                                if (keyBoardHookStruct.vkCode == VK_F12 && GetForegroundWindow() == hWnd)
-                                {
-                                    ChangeMenu(!movestate);
-                                }
+                                ChangeMenu(!movestate);
                             }
                         }
-                        return CallNextHookEx((int)HOOKhwnd, nCode, wParam, lParam);
                     }
-                    HOOKPROC HOOKproc = new HOOKPROC(CallBackFunc);
-                    HOOKhwnd = SetWindowsHookEx(WH_KEYBOARD_LL, HOOKproc, IntPtr.Zero, 0);
+                    return CallNextHookEx((int)HOOKhwnd, nCode, wParam, lParam);
+                };
+                HOOKPROC Win32HookProc = new HOOKPROC(Win32CallBack);
+                watcher.Shown += (object es, EventArgs ee) =>
+                {
+                    HOOKhwnd = SetWindowsHookEx(WH_KEYBOARD_LL, Win32HookProc, IntPtr.Zero, 0);
                     if (HOOKhwnd == IntPtr.Zero)
                     {
                         throw new Win32Exception(Marshal.GetLastWin32Error(),
@@ -353,12 +390,14 @@ namespace YuanShen_Window_Adapter
                     waiting.Start();
                 }
                 watcher.ShowDialog();
+                GC.KeepAlive(Win32CallBack); // 固定相关Win32委托内存，防止垃圾回收机制回收方法体导致抛出【未将对象引用设置到对象的实例】异常
+                GC.KeepAlive(Win32HookProc);
                 if (ExceptionList.Count != 0) // 检测是否存在未影响程序运行的异常并按需显示提示信息
                 {
                     string message = "程序运行过程中发生了一个或多个异常，但未影响程序正常运行。";
                     foreach (string msg in ExceptionList)
                     {
-                        message += $"{Environment.NewLine}低影响度异常：{msg}";
+                        message += $"    {Environment.NewLine}低影响度异常：{msg}";
                     }
                     Exception_throw(new AggregateException(message));
                 }
