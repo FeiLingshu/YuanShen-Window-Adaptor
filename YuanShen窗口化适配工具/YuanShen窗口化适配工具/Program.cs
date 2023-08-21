@@ -153,17 +153,7 @@ namespace YuanShen_Window_Adapter
 
             // 判断命令行参数选择执行模式
 
-            if (args == null || args.Length == 0)
-            {
-                Screen main_s = Screen.FromRectangle(window_r.ToRectangle()); // 进行屏幕检测
-                if (main_s.Bounds.Size != client_r.ToRectangle().Size) return;
-                Point lction_p = main_s.Bounds.Location; // 计算并应用新的窗口坐标
-                lction_p.Offset(-point_e.X, -point_e.Y);
-                bool final = SetWindowPos(hWnd, IntPtr.Zero, lction_p.X, lction_p.Y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-                if (!final) return;
-            } // 执行正常全屏模式
-
-            else if (args.Length == 1)
+            if (args.Length == 1)
             {
                 Size targatesize = Size.Empty; // 对两种预置显示模式进行匹配
                 if (args[0].ToUpper() == "(PC)") // 21:9
@@ -235,51 +225,10 @@ namespace YuanShen_Window_Adapter
                     right = lction_p.X + windowsize.Width + size_e.Width,
                     bottom = lction_p.Y + windowsize.Height + size_e.Height
                 };
-                SendMessage(hWnd, WM_ENTERSIZEMOVE, IntPtr.Zero, IntPtr.Zero);
                 Rectangle rectangle = rect.ToRectangle();
-                bool final = SetWindowPos(hWnd, IntPtr.Zero, rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, SWP_NOZORDER);
-                if (!final)
-                {
-                    SendMessage(hWnd, WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero);
-                    throw new Win32Exception(Marshal.GetLastWin32Error(),
-                        $"调整窗口属性过程中出现Win32异常({Marshal.GetLastWin32Error().ToString().PadLeft(4, '0')})。");
-                };
-                IntPtr param = Marshal.AllocHGlobal(Marshal.SizeOf(rect));
-                Marshal.StructureToPtr(rect, param, false);
-                SendMessage(hWnd, WM_MOVING, IntPtr.Zero, param);
-                Marshal.FreeHGlobal(param);
-                SendMessage(hWnd, WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero);
+                SizeMove();
+                ChangeTitle();
                 bool movestate = true; // 额外附加操作，冻结窗口位置
-                void ChangeMenu(bool restore)
-                {
-                    if (!restore)
-                    {
-                        IntPtr menuhwnd = GetSystemMenu(hWnd, false);
-                        if (menuhwnd != IntPtr.Zero)
-                        {
-                            RemoveMenu(menuhwnd, SC_MOVE, MF_BYCOMMAND);
-                            movestate = false;
-                            SendMessage(hWnd, WM_ENTERSIZEMOVE, IntPtr.Zero, IntPtr.Zero); // 恢复冻结后重新定位窗口坐标
-                            bool final_in = SetWindowPos(hWnd, IntPtr.Zero, rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, SWP_NOZORDER);
-                            if (!final_in)
-                            {
-                                SendMessage(hWnd, WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero);
-                                throw new Win32Exception(Marshal.GetLastWin32Error(),
-                                    $"调整窗口属性过程中出现Win32异常({Marshal.GetLastWin32Error().ToString().PadLeft(4, '0')})。");
-                            };
-                            IntPtr param_in = Marshal.AllocHGlobal(Marshal.SizeOf(rect));
-                            Marshal.StructureToPtr(rect, param_in, false);
-                            SendMessage(hWnd, WM_MOVING, IntPtr.Zero, param_in);
-                            Marshal.FreeHGlobal(param_in);
-                            SendMessage(hWnd, WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero);
-                        };
-                    }
-                    else
-                    {
-                        IntPtr menuhwnd = GetSystemMenu(hWnd, true);
-                        movestate = true;
-                    }
-                }
                 ChangeMenu(false);
                 WatcherForm watcher = new WatcherForm() // 挂接挂钩过程
                 {
@@ -309,6 +258,11 @@ namespace YuanShen_Window_Adapter
                             {
                                 ChangeMenu(!movestate);
                             }
+                            if (keyBoardHookStruct.vkCode == VK_F11 && GetForegroundWindow() == hWnd)
+                            {
+                                SizeMove();
+                                ChangeTitle();
+                            }
                         }
                     }
                     return CallNextHookEx((int)HOOKhwnd, nCode, wParam, lParam);
@@ -334,15 +288,62 @@ namespace YuanShen_Window_Adapter
                             $"挂接全局HOOK挂钩过程中出现Win32异常({Marshal.GetLastWin32Error().ToString().PadLeft(4, '0')})。");
                     };
                 };
-                void GotoChecking() // 修改程序标题，向用户指示主要操作已经完成
+                void ChangeMenu(bool restore) // 修改窗口菜单选项
+                {
+                    if (!restore)
+                    {
+                        IntPtr menuhwnd = GetSystemMenu(hWnd, false);
+                        if (menuhwnd != IntPtr.Zero)
+                        {
+                            RemoveMenu(menuhwnd, SC_MOVE, MF_BYCOMMAND);
+                            movestate = false;
+                            SizeMove(); // 恢复冻结后重新定位窗口坐标
+                        };
+                    }
+                    else
+                    {
+                        IntPtr menuhwnd = GetSystemMenu(hWnd, true);
+                        movestate = true;
+                    }
+                }
+                bool SizeMove() // 调整窗口属性
+                {
+                    if (!GetWindowRect(hWnd, out RECT checkout))
+                    {
+                        throw new Win32Exception(Marshal.GetLastWin32Error(),
+                            $"调整窗口属性过程中出现Win32异常({Marshal.GetLastWin32Error().ToString().PadLeft(4, '0')})。");
+                    };
+                    if (checkout.ToRectangle().Location != rectangle.Location || checkout.ToRectangle().Size != rectangle.Size)
+                    {
+                        bool final_in = SetWindowPos(hWnd, IntPtr.Zero,
+                        rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height,
+                        SWP_FRAMECHANGED | SWP_NOCOPYBITS | SWP_NOZORDER);
+                        if (!final_in)
+                        {
+                            throw new Win32Exception(Marshal.GetLastWin32Error(),
+                                $"调整窗口属性过程中出现Win32异常({Marshal.GetLastWin32Error().ToString().PadLeft(4, '0')})。");
+                        };
+                        SendMessage(hWnd, 0x0112, (IntPtr)0xF020, (IntPtr)0);
+                        SendMessage(hWnd, 0x0112, (IntPtr)0xF120, (IntPtr)(rectangle.Y << 16 | rectangle.X));
+                        return true;
+                    }
+                    return false;
+                }
+                bool ChangeTitle() // 修改程序标题
                 {
                     StringBuilder title = new StringBuilder(GetWindowTextLength(hWnd) + 1);
                     GetWindowText(hWnd, title, title.Capacity);
-                    string titlestr = title.ToString();
-                    title.Clear();
-                    if (string.IsNullOrEmpty(titlestr)) titlestr = "原神";
-                    titlestr += " · 宽屏适配模块相关进程已挂载(F12=启用/禁用位置锁定)";
-                    SendMessage(hWnd, WM_SETTEXT, IntPtr.Zero, titlestr);
+                    if (title.ToString() != "原神 · 宽屏适配模块相关进程已挂载(F11=刷新窗口设置)(F12=启用/禁用位置锁定)")
+                    {
+                        string titlestr = "原神 · 宽屏适配模块相关进程已挂载(F11=刷新窗口设置)(F12=启用/禁用位置锁定)";
+                        SendMessage(hWnd, WM_SETTEXT, IntPtr.Zero, titlestr);
+                        return true;
+                    }
+                    return false;
+                }
+                void GotoChecking() // 修改程序标题，向用户指示主要操作已经完成
+                {
+                    ChangeTitle();
                     Thread checking = new Thread((object e_time) =>
                     {
                         AutoResetEvent timer = new AutoResetEvent(false);
@@ -354,16 +355,15 @@ namespace YuanShen_Window_Adapter
                         {
                             checksb.Capacity += GetWindowTextLength(hWnd);
                             GetWindowText(hWnd, checksb, checksb.Capacity);
-                            if (checksb.ToString() != titlestr)
+                            if (checksb.ToString() != "原神 · 宽屏适配模块相关进程已挂载(F11=刷新窗口设置)(F12=启用/禁用位置锁定)")
                             {
                                 timer.WaitOne(500); // 添加500ms标准延时，防止更新速度过快导致过度闪烁
-                                SendMessage(hWnd, WM_SETTEXT, IntPtr.Zero, titlestr);
-                                break;
+                                if (ChangeTitle()) break;
                             }
                             checksb.Clear();
                             checksb.Capacity = 1;
                             counter++;
-                            if (counter == counter_limit) break; // 由于挂接目标进程在启动过程中会重置一次标题，故循环20s进行标题判断
+                            if (counter == counter_limit) break; // 由于挂接目标进程在启动过程中会重置一次窗口属性，故循环20s进行标题判断
                                                                  // 循环体20s循环时间，是由于挂接目标进程自启动到可以进行交互时所消耗的时间大致为20s
                             timer.WaitOne(1);
                         } while (true);
@@ -479,13 +479,17 @@ namespace YuanShen_Window_Adapter
         private static extern bool ClientToScreen(IntPtr hWnd, ref Point lpPoint);
 
         /// <summary>
-        /// 指示不改变窗口大小
+        /// 将 WM_NCCALCSIZE 消息发送到窗口
         /// </summary>
-        private const int SWP_NOSIZE = 0x0001;
+        private const int SWP_FRAMECHANGED = 0x0020;
         /// <summary>
         /// 指示不改变窗口Z序
         /// </summary>
         private const int SWP_NOZORDER = 0x0004;
+        /// <summary>
+        /// 丢弃工作区的整个内容
+        /// </summary>
+        private const int SWP_NOCOPYBITS = 0x0100;
         /// <summary>
         /// 调整窗口空间信息
         /// </summary>
@@ -533,18 +537,6 @@ namespace YuanShen_Window_Adapter
             }
         }
 
-        /// <summary>
-        /// 窗口进入大小位置调整模式
-        /// </summary>
-        private const int WM_ENTERSIZEMOVE = 0x0231;
-        /// <summary>
-        /// 窗口离开大小位置调整模式
-        /// </summary>
-        private const int WM_EXITSIZEMOVE = 0x0232;
-        /// <summary>
-        /// 窗口正在移动
-        /// </summary>
-        private const int WM_MOVING = 0x0216;
         /// <summary>
         /// 需要设置窗口的标题文本
         /// </summary>
@@ -604,6 +596,15 @@ namespace YuanShen_Window_Adapter
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
+        /// <summary>
+        /// 控制窗口显示行为
+        /// </summary>
+        /// <param name="hWnd">窗口句柄</param>
+        /// <param name="nCmdShow">控制显示行为的标志</param>
+        /// <returns>指示操作是否成功</returns>
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
         #endregion
 
         #region 全局HOOK挂钩互操作代码块
@@ -650,6 +651,11 @@ namespace YuanShen_Window_Adapter
         /// 表示键盘F12按键
         /// </summary>
         private const int VK_F12 = 0x7B;
+
+        /// <summary>
+        /// 表示键盘F11按键
+        /// </summary>
+        private const int VK_F11 = 0x7A;
 
         /// <summary>
         /// 用于执行挂钩过程的委托函数
